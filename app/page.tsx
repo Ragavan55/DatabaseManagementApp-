@@ -1,103 +1,272 @@
-import Image from "next/image";
+'use client';
+
+import { useEffect, useState } from 'react';
+
+type Student = {
+  roll: number;
+  firstname: string;
+  lastname: string;
+};
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [search, setSearch] = useState('');
+  const [students, setStudents] = useState<Student[]>([]);
+  const [showModal, setShowModal] = useState(false);
+  const [modalType, setModalType] = useState<'add' | 'edit'>('add');
+  const [form, setForm] = useState({ roll: '', firstname: '', lastname: '' });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false); 
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+  useEffect(() => {
+    fetchStudents();
+  }, []);
+
+  const fetchStudents = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch('/api/students');
+      if (!res.ok) throw new Error('Failed to fetch students');
+      const data = await res.json();
+      setStudents(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch students');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+const filteredStudents = students.filter(
+  s =>
+    s.roll.toString().includes(search) ||
+    s.firstname.toLowerCase().includes(search.toLowerCase()) ||
+    s.lastname.toLowerCase().includes(search.toLowerCase())
+);
+
+  const handleDelete = async (roll: number) => {
+    const confirmation = confirm(`Are you sure you want to delete student with roll number ${roll}?`);
+    if (!confirmation) return;
+
+    try {
+      const res = await fetch('/api/delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: roll }),
+      });
+
+      if (!res.ok) throw new Error('Failed to delete student');
+
+      setStudents(students.filter(s => s.roll !== roll));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to delete student');
+    }
+  };
+
+  const openAddModal = () => {
+    setModalType('add');
+    setForm({ roll: '', firstname: '', lastname: '' });
+    setShowModal(true);
+  };
+
+  const openEditModal = (student: Student) => {
+    setModalType('edit');
+    setForm({ 
+      roll: String(student.roll), 
+      firstname: student.firstname,
+      lastname: student.lastname 
+    });
+    setShowModal(true);
+  };
+
+  const handleModalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleModalSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsSubmitting(true);
+
+    try {
+      if (modalType === 'add') {
+        const res = await fetch('/api/add', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            rollno: Number(form.roll),
+            firstName: form.firstname,
+            lastName: form.lastname,
+          }),
+        });
+
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.error || 'Failed to add student');
+        }
+
+        const { student } = await res.json();
+        setStudents([...students, {
+          roll: student.roll,
+          firstname: student.firstname,
+          lastname: student.lastname
+        }]);
+        setShowModal(false);
+      } else {
+        const res = await fetch(`/api/put/`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            rollno: Number(form.roll),
+            firstName: form.firstname,
+            lastName: form.lastname,
+          }),
+        });
+
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.error || 'Failed to update student');
+        }
+
+        const { student } = await res.json();
+        setStudents(students.map(s => 
+          s.roll === student.roll ? {
+            roll: student.roll,
+            firstname: student.firstname,
+            lastname: student.lastname
+          } : s
+        ));
+        setShowModal(false);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Operation failed');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center min-h-screen p-4 bg-gray-100">
+      <div className="w-full max-w-4xl">
+        <div className="w-full flex justify-between items-center p-4">
+          <h1 className="text-2xl font-bold">Student List</h1>
+          <div>
+            <input type="text" placeholder='search......'  value={search} onChange={e => setSearch(e.target.value)} className='bg-white p-3 rounded-2xl border-black' />
+          </div>
+          <button
+            onClick={openAddModal}
+            className="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            Add Student
+          </button>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>}
+
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="p-4 bg-gray-50">
+            <h4 className="font-medium">Total Students: {students.length}</h4>
+          </div>
+          
+          {loading ? (
+            <div className="p-8 text-center">Loading...</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">S.No</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Roll Number</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">First Name</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Name</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredStudents.map((s, i) => (
+                    <tr key={s.roll}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{i + 1}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{s.roll}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{s.firstname}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{s.lastname}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button
+                          onClick={() => openEditModal(s)}
+                          className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded mr-2"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(s.roll)}
+                          className="bg-red-700 hover:bg-red-800 text-white px-3 py-1 rounded"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {showModal && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+            <div className="bg-white p-6 rounded shadow-lg min-w-[300px] max-w-md w-full">
+              <h2 className="text-lg font-bold mb-4">
+                {modalType === 'add' ? 'Add Student' : 'Edit Student'}
+              </h2>
+              <form onSubmit={handleModalSubmit} className="flex flex-col gap-3">
+                <input
+                  type="number"
+                  name="roll"
+                  placeholder="Roll Number"
+                  value={form.roll}
+                  onChange={handleModalChange}
+                  className="border p-2 rounded"
+                  required
+                  disabled={modalType === 'edit'}
+                />
+                <input
+                  type="text"
+                  name="firstname"
+                  placeholder="First Name"
+                  value={form.firstname}
+                  onChange={handleModalChange}
+                  className="border p-2 rounded"
+                  required
+                />
+                <input
+                  type="text"
+                  name="lastname"
+                  placeholder="Last Name"
+                  value={form.lastname}
+                  onChange={handleModalChange}
+                  className="border p-2 rounded"
+                  required
+                />
+                {error && <div className="text-red-500 text-sm">{error}</div>}
+                <div className="flex justify-end gap-2 mt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowModal(false)}
+                    className="bg-gray-400 hover:bg-gray-500 text-white px-3 py-1 rounded"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="bg-blue-700 hover:bg-blue-800 text-white px-3 py-1 rounded"
+                  >
+                    {modalType === 'add' ? 'Add' : 'Update'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
