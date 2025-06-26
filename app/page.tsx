@@ -16,7 +16,7 @@ export default function Home() {
   const [form, setForm] = useState({ roll: '', firstname: '', lastname: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false); 
+  // const [isSubmitting, setIsSubmitting] = useState(false); 
 
   useEffect(() => {
     fetchStudents();
@@ -86,7 +86,7 @@ const filteredStudents = students.filter(
   const handleModalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setIsSubmitting(true);
+    // setIsSubmitting(true);
 
     try {
       if (modalType === 'add') {
@@ -141,7 +141,7 @@ const filteredStudents = students.filter(
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Operation failed');
     } finally {
-      setIsSubmitting(false);
+      // setIsSubmitting(false);
     }
   };
 
