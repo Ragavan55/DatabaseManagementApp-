@@ -16,7 +16,6 @@ export default function Home() {
   const [form, setForm] = useState({ roll: '', firstname: '', lastname: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  // const [isSubmitting, setIsSubmitting] = useState(false); 
 
   useEffect(() => {
     fetchStudents();
@@ -37,12 +36,12 @@ export default function Home() {
     }
   };
 
-const filteredStudents = students.filter(
-  s =>
-    s.roll.toString().includes(search) ||
-    s.firstname.toLowerCase().includes(search.toLowerCase()) ||
-    s.lastname.toLowerCase().includes(search.toLowerCase())
-);
+  const filteredStudents = students.filter(
+    s =>
+      s.roll.toString().includes(search) ||
+      s.firstname.toLowerCase().includes(search.toLowerCase()) ||
+      s.lastname.toLowerCase().includes(search.toLowerCase())
+  );
 
   const handleDelete = async (roll: number) => {
     const confirmation = confirm(`Are you sure you want to delete student with roll number ${roll}?`);
@@ -86,7 +85,6 @@ const filteredStudents = students.filter(
   const handleModalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    // setIsSubmitting(true);
 
     try {
       if (modalType === 'add') {
@@ -140,65 +138,75 @@ const filteredStudents = students.filter(
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Operation failed');
-    } finally {
-      // setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="flex flex-col items-center min-h-screen p-4 bg-gray-100">
-      <div className="w-full max-w-4xl">
-        <div className="w-full flex justify-between items-center p-4">
-          <h1 className="text-2xl font-bold">Student List</h1>
-          <div>
-            <input type="text" placeholder='search......'  value={search} onChange={e => setSearch(e.target.value)} className='bg-white p-3 rounded-2xl border-black' />
+    <div className="flex flex-col items-center min-h-screen p-2 sm:p-4 bg-gray-100">
+      <div className="w-full max-w-full sm:max-w-4xl">
+        <div className="w-full flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2 sm:gap-0 p-2 sm:p-4">
+          <h1 className="text-xl sm:text-2xl font-bold">Student List</h1>
+          <div className="flex-1 flex justify-center sm:justify-end mb-2 sm:mb-0">
+            <input
+              type="text"
+              placeholder="search......"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full sm:w-auto bg-white p-2 sm:p-3 rounded-2xl border border-black"
+            />
           </div>
           <button
             onClick={openAddModal}
-            className="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded"
+            className="bg-blue-700 hover:bg-blue-800 text-white px-3 sm:px-4 py-2 rounded w-full sm:w-auto"
           >
             Add Student
           </button>
         </div>
 
-        {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>}
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            {error}
+          </div>
+        )}
 
         <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="p-4 bg-gray-50">
-            <h4 className="font-medium">Total Students: {students.length}</h4>
+          <div className="p-2 sm:p-4 bg-gray-50">
+            <h4 className="font-medium text-sm sm:text-base">
+              Total Students: {students.length}
+            </h4>
           </div>
-          
+
           {loading ? (
             <div className="p-8 text-center">Loading...</div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
+              <table className="min-w-[600px] w-full divide-y divide-gray-200 text-xs sm:text-sm">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">S.No</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Roll Number</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">First Name</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Name</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    <th className="px-2 sm:px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">S.No</th>
+                    <th className="px-2 sm:px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Roll Number</th>
+                    <th className="px-2 sm:px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">First Name</th>
+                    <th className="px-2 sm:px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Last Name</th>
+                    <th className="px-2 sm:px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredStudents.map((s, i) => (
                     <tr key={s.roll}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{i + 1}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{s.roll}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{s.firstname}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{s.lastname}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <td className="px-2 sm:px-6 py-4 whitespace-nowrap text-gray-500">{i + 1}</td>
+                      <td className="px-2 sm:px-6 py-4 whitespace-nowrap font-medium text-gray-900">{s.roll}</td>
+                      <td className="px-2 sm:px-6 py-4 whitespace-nowrap text-gray-500">{s.firstname}</td>
+                      <td className="px-2 sm:px-6 py-4 whitespace-nowrap text-gray-500">{s.lastname}</td>
+                      <td className="px-2 sm:px-6 py-4 whitespace-nowrap font-medium">
                         <button
                           onClick={() => openEditModal(s)}
-                          className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded mr-2"
+                          className="bg-yellow-500 hover:bg-yellow-600 text-white px-2 sm:px-3 py-1 rounded mr-1 sm:mr-2 mb-1 sm:mb-0"
                         >
                           Edit
                         </button>
                         <button
                           onClick={() => handleDelete(s.roll)}
-                          className="bg-red-700 hover:bg-red-800 text-white px-3 py-1 rounded"
+                          className="bg-red-700 hover:bg-red-800 text-white px-2 sm:px-3 py-1 rounded"
                         >
                           Delete
                         </button>
@@ -213,8 +221,8 @@ const filteredStudents = students.filter(
 
         {showModal && (
           <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
-            <div className="bg-white p-6 rounded shadow-lg min-w-[300px] max-w-md w-full">
-              <h2 className="text-lg font-bold mb-4">
+            <div className="bg-white p-4 sm:p-6 rounded shadow-lg w-[90vw] max-w-md">
+              <h2 className="text-base sm:text-lg font-bold mb-4">
                 {modalType === 'add' ? 'Add Student' : 'Edit Student'}
               </h2>
               <form onSubmit={handleModalSubmit} className="flex flex-col gap-3">
@@ -247,7 +255,7 @@ const filteredStudents = students.filter(
                   required
                 />
                 {error && <div className="text-red-500 text-sm">{error}</div>}
-                <div className="flex justify-end gap-2 mt-2">
+                <div className="flex flex-col sm:flex-row justify-end gap-2 mt-2">
                   <button
                     type="button"
                     onClick={() => setShowModal(false)}
